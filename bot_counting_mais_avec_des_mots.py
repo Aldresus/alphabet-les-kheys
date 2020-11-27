@@ -1,9 +1,11 @@
 import discord
 from discord.ext import commands
 from larousse_api import larousse
-
 derniereLettre="`"
-channel = 781464782414282813
+channel = 781511101002678295
+points = 0
+topNb=0
+record=False
 # on part de ce caractère parce qu'on teste si la première lettre du mot entré par l'utilisateur est égale au code décimal de la dernière lettre + 1
 # donc avec `+1 on obtient a
 
@@ -20,6 +22,27 @@ def embedDef(ctx,definition): # joli affichage de la définition du mot entré (
     embed.add_field(name="**{0}** ".format(ctx.content.capitalize()), value="{0}".format(definition)) # commande qui permettrait d'ajouter des mots.
     return embed
 
+def embedFail(ctx,j): # joli affichage de la définition du mot entré (et valide)
+    global points
+    global record
+    global topNb
+
+    if record:
+        embed=discord.Embed(title=":crown: **NOUVEAU RECORD !** :crown:",color=0xd29d00)
+    else:
+        embed=discord.Embed(color=0xff4013)
+
+    embed.add_field(name='Vos points sont revenus à 0.',value="*Eh oui*",inline=False) # commande qui permettrait d'ajouter des mots.
+    if points>1:
+        embed.add_field(name="Score final :",value="**{0}** points.".format(points),inline=False)
+    else:
+        embed.add_field(name="Score final :",value="**{0}** point.".format(points),inline=False)
+    if record:
+        embed.add_field(name="Rank :",value="TOP 1 !!",inline=False)
+    else:
+        embed.add_field(name="Rank :",value="Top **{0}** sur **{1}**.".format(j-topNb+1,j),inline=False)
+    return embed
+
 description = "Un bot qui t'apprends l'alphabet et étoffe ton langage."
 client = commands.Bot(command_prefix='', description=description)
 joueA="inventer des mots" #on défini le status qui est affiché
@@ -33,10 +56,10 @@ async def on_ready():
 async def on_message(ctx): # dès qu'un message est envoyé on stocke toutes ces infos (auteur, contenu, diverses ID, ...)+
     if channel==ctx.channel.id:
         global derniereLettre # on récupère la première lettre du dernier mot entré
-        role = discord.utils.get(ctx.guild.roles, name = "analphabète") #me donne les infos du role analphabète
-
-        if derniereLettre=='z': # si on est à la lettre z
-            derniereLettre="`" # on retourne à a
+        global points
+        global record
+        global topNb
+        #role = discord.utils.get(ctx.guild.roles, name = "analphabète") #me donne les infos du role analphabète
 
         if ctx.author.id != 781488381719871510: # on vérifie que le bot ne s'auto réponde pas
 
@@ -47,28 +70,54 @@ async def on_message(ctx): # dès qu'un message est envoyé on stocke toutes ces
                 pass
 
             else :
+                premiereLettre=ctx.content[0].lower() # on stocke la première lettre du mot en minuscule
                 definition=larousse.get_definitions(ctx.content.lower()) # on récupère la définition du mot entré
                 print(ctx.content) # debug
-                print(definition) # debug
 
-                if definition==[] : # si il n'y a pas de définition, on considère que le mot n'éxiste pas
-                    await ctx.channel.send("Ça veut rien dire {0} !".format(ctx.author.mention)) #on insulte si le mot entré n'est pas reconnu
-                    # await ctx.author.add_role(role) censé give un role mais fonctionne po
+                if ord(premiereLettre)!=ord(derniereLettre)+1: # si la première lettre du mot est bien celle qui suit la lettre stockée
+                        await ctx.channel.send("Retourne apprendre l'alphabet {0} !".format(ctx.author.mention)) # on insulte si la réponse ne commence pas par la bonne lettre
+
+                        scoreboard=open("scoreboard.txt","r")
+                        j=0
+                        for i in scoreboard :
+                            j=j+1
+                            i=i.replace('\n','')
+
+                            if int(i)<=points :
+                                topNb=topNb+1
+
+                        scoreboard.close
+                        if topNb==j:
+                            record=True
+
+                        await ctx.channel.send(embed=embedFail(ctx,j))
+
+                        scoreboard=open("scoreboard.txt","a")
+                        scoreboard.write("{0}\n".format(points))
+                        scoreboard.close
+                        points=0
+                        topNb=0
+                        record=False
+                        derniereLettre="`"
+                        # await ctx.author.add_role(role) censé give un role mais fonctionne po
 
                 else :
-                    premiereLettre=ctx.content[0].lower() # on stocke la première lettre du mot en minuscule
-                    print(premiereLettre)
 
-                    if ord(premiereLettre)==ord(derniereLettre)+1: # si la première lettre du mot est bien celle qui suit la lettre stockée
+                    if len(str(definition))>1000:
+                        definition="La def est trop longue."
+
+                    if definition!=[] : # si il n'y a pas de définition, on considère que le mot n'éxiste pas
                         await ctx.channel.send(embed=embedDef(ctx,str(definition).replace("[",'').replace("]",'').replace('"',''))) #on affiche la def pour rendre les gens + intélligents
                         await ctx.add_reaction('\N{THUMBS UP SIGN}') # on ajoute la réaction pouce vers le haut pour montrer que la réponse est bonne
                         derniereLettre=premiereLettre.lower() # on stocke la première lettre du mot pour la réutiliser plus tard
+                        points=points+1 # on ajoute 1 pts
+
+                        if derniereLettre=="z": # si on est à la lettre z
+                            derniereLettre="`" # on retourne à a
+                            await ctx.channel.send("BRAVO :partying_face: ! Vous venez de completer l'alphabet ! On repart de 'A'".format(ctx.author.mention))
 
                     else :
-                        await ctx.channel.send("Retourne apprendre l'alphabet {0} !".format(ctx.author.mention)) # on insulte si la réponse ne commence pas par la bonne lettre
+                        await ctx.channel.send("Ça veut rien dire {0} !".format(ctx.author.mention)) #on insulte si le mot entré n'est pas reconnu
                         # await ctx.author.add_role(role) censé give un role mais fonctionne po
-    else:
-        print("autre channel")
-
 
 client.run('Token du bot')
