@@ -2,10 +2,12 @@ import discord
 from discord.ext import commands
 from larousse_api import larousse
 derniereLettre="`"
-channel = 781511101002678295
+channel = 781464782414282813
 points = 0
 topNb=0
 record=False
+lienScoreboard='scoreboard.txt'
+idBot=781488381719871510
 # on part de ce caractère parce qu'on teste si la première lettre du mot entré par l'utilisateur est égale au code décimal de la dernière lettre + 1
 # donc avec `+1 on obtient a
 
@@ -43,6 +45,17 @@ def embedFail(ctx,j): # joli affichage de la définition du mot entré (et valid
         embed.add_field(name="Rank :",value="Top **{0}** sur **{1}**.".format(j-topNb+1,j),inline=False)
     return embed
 
+def embedClassement(classement): # joli affichage de la définition du mot entré (et valide)
+    embed=discord.Embed(color=0xfefcdd,title="Classement :")
+    for i in range(len(classement)):
+        if i >9 :
+            break
+        elif i==0:
+            embed.add_field(name=":trophy: **{0}**er :".format(i+1), value="{0} points".format(classement[i]),inline=False)
+        else:
+            embed.add_field(name="N° **{0}**e :".format(i+1), value="{0} points".format(classement[i]),inline=True) # commande qui permettrait d'ajouter des mots.
+    return embed
+
 description = "Un bot qui t'apprends l'alphabet et étoffe ton langage."
 client = commands.Bot(command_prefix='', description=description)
 joueA="inventer des mots" #on défini le status qui est affiché
@@ -61,23 +74,33 @@ async def on_message(ctx): # dès qu'un message est envoyé on stocke toutes ces
         global topNb
         #role = discord.utils.get(ctx.guild.roles, name = "analphabète") #me donne les infos du role analphabète
 
-        if ctx.author.id != 781488381719871510: # on vérifie que le bot ne s'auto réponde pas
+        if ctx.author.id != idBot: # on vérifie que le bot ne s'auto réponde pas
 
             if ctx.content =="!aide": # si le message est la commande aide
                 await ctx.channel.send(embed=embed(ctx),delete_after=20) # on affiche l'aide
+
+            if ctx.content =="!top": # si le message est la commande aide
+                classement=[]
+                scoreboard=open(lienScoreboard,"r")
+                for i in scoreboard :
+                    classement.append(int(i.replace('\n','')))
+                scoreboard.close
+                classement.sort(reverse=True)
+                await ctx.channel.send(embed=embedClassement(classement))
+
 
             elif "*" in ctx.content : # pour pouvoir parler sans que le bot ne s'énerve
                 pass
 
             else :
-                premiereLettre=ctx.content[0].lower() # on stocke la première lettre du mot en minuscule
+                premiereLettre=ctx.content[0].replace("É","E").replace("é","e").lower() # on stocke la première lettre du mot en minuscule
                 definition=larousse.get_definitions(ctx.content.lower()) # on récupère la définition du mot entré
                 print(ctx.content) # debug
 
                 if ord(premiereLettre)!=ord(derniereLettre)+1: # si la première lettre du mot est bien celle qui suit la lettre stockée
                         await ctx.channel.send("Retourne apprendre l'alphabet {0} !".format(ctx.author.mention)) # on insulte si la réponse ne commence pas par la bonne lettre
 
-                        scoreboard=open("scoreboard.txt","r")
+                        scoreboard=open(lienScoreboard,"r")
                         j=0
                         for i in scoreboard :
                             j=j+1
@@ -92,7 +115,7 @@ async def on_message(ctx): # dès qu'un message est envoyé on stocke toutes ces
 
                         await ctx.channel.send(embed=embedFail(ctx,j))
 
-                        scoreboard=open("scoreboard.txt","a")
+                        scoreboard=open(lienScoreboard,"a")
                         scoreboard.write("{0}\n".format(points))
                         scoreboard.close
                         points=0
