@@ -46,7 +46,7 @@ def embedFail(ctx,j): # joli affichage de la définition du mot entré (et valid
     return embed
 
 def embedClassement(classement): # joli affichage de la définition du mot entré (et valide)
-    embed=discord.Embed(color=0xfefcdd,title="Classement :")
+    embed=discord.Embed(color=0xfefcdd,title="10 Meilleurs records :")
     for i in range(len(classement)):
         if i >9 :
             break
