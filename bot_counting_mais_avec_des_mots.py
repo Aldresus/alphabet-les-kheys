@@ -53,7 +53,7 @@ def embedClassement(classement): # joli affichage de la définition du mot entr�
         elif i==0:
             embed.add_field(name=":trophy: **{0}**er :".format(i+1), value="{0} points".format(classement[i]),inline=False)
         else:
-            embed.add_field(name="N° **{0}**e :".format(i+1), value="{0} points".format(classement[i]),inline=True) # commande qui permettrait d'ajouter des mots.
+            embed.add_field(name="**{0}**e :".format(i+1), value="{0} points".format(classement[i]),inline=True) # commande qui permettrait d'ajouter des mots.
     return embed
 
 description = "Un bot qui t'apprends l'alphabet et étoffe ton langage."
