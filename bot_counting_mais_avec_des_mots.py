@@ -95,7 +95,6 @@ async def on_message(ctx): # dès qu'un message est envoyé on stocke toutes ces
             else :
                 premiereLettre=ctx.content[0].replace("É","E").replace("é","e").lower() # on stocke la première lettre du mot en minuscule
                 definition=larousse.get_definitions(ctx.content.lower()) # on récupère la définition du mot entré
-                print(ctx.content) # debug
 
                 if ord(premiereLettre)!=ord(derniereLettre)+1: # si la première lettre du mot est bien celle qui suit la lettre stockée
                         await ctx.channel.send("Retourne apprendre l'alphabet {0} !".format(ctx.author.mention)) # on insulte si la réponse ne commence pas par la bonne lettre
